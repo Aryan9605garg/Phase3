@@ -1,0 +1,302 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Courier New;}}
+{\colortbl ;\red0\green77\blue187;\red17\green24\blue39;\red0\green0\blue255;\red55\green65\blue81;}
+{\*\generator Riched20 10.0.22621}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\qc\cf1\b\f0\fs32\lang9 Source Code:\fs22\line\b0\par
+
+\pard\sa160\sl259\slmult0\line\par
+\cf2\b\fs21 web.xml\par
+\cf0\b0\fs22 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\par
+         xmlns="{{\field{\*\fldinst{HYPERLINK http://java.sun.com/xml/ns/javaee }}{\fldrslt{http://java.sun.com/xml/ns/javaee\ul0\cf0}}}}\f0\fs22 "\par
+xsi:schemaLocation="http://java.sun.com/xml/ns/javaee\par
+                             {{\field{\*\fldinst{HYPERLINK http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd }}{\fldrslt{http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd\ul0\cf0}}}}\f0\fs22 "\par
+         id="WebApp_ID" version="3.0">\par
+  \par
+    <display-name>Spring MVC Hibernate Demo</display-name>\par
+    \par
+     <servlet>\par
+        <servlet-name>dispatcher</servlet-name>\par
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>\par
+        <init-param>\par
+            <param-name>contextConfigLocation</param-name>\par
+            <param-value>/WEB-INF/dispatcher-servlet.xml</param-value>\par
+        </init-param>\par
+        <load-on-startup>1</load-on-startup>\par
+    </servlet>\par
+    \par
+    <servlet-mapping>\par
+        <servlet-name>dispatcher</servlet-name>\par
+        <url-pattern>/</url-pattern>\par
+    </servlet-mapping>\par
+</web-app>\par
+\cf1\par
+\par
+\cf2\b\fs21 log4j2.xml\par
+\cf0\b0\fs22 <Configuration status="WARN">\par
+    <Appenders>\par
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">\par
+            <PatternLayout pattern="%d\{HH:mm:ss.SSS\} [%t] %-5level %logger\{36\} - %msg%n" />\par
+        </Console>\par
+    </Appenders>\par
+    <Loggers>\par
+        <Root level="debug">\par
+            <AppenderRef ref="ConsoleAppender" />\par
+        </Root>\par
+    </Loggers>\par
+</Configuration>\par
+\cf1\par
+\par
+\cf0\b UserDao.java\par
+\b0 public interface UserDao \{\par
+    User getUserById(int userId);\par
+    void updateUser(User user);\par
+\}\par
+\b HibernateUserDao.java\par
+\b0 @Repository\par
+public class HibernateUserDao implements UserDao \{\par
+    @Autowired\par
+    private SessionFactory sessionFactory;\par
+ \par
+    @Override\par
+    public User getUserById(int userId) \{\par
+        Session session = sessionFactory.getCurrentSession();\par
+        return session.get(User.class, userId);\par
+    \}\par
+ \par
+    @Override\par
+    public void updateUser(User user) \{\par
+        Session session = sessionFactory.getCurrentSession();\par
+        session.update(user);\par
+    \}\par
+\}\par
+\cf4\b\fs24 UserService.java\par
+\cf0\b0\fs22 public interface UserService \{\par
+    User getUserById(int userId);\par
+    void updateUser(User user);\par
+\}\par
+\cf4\b\fs24\par
+\par
+\par
+ServiceImpl.java\par
+\cf0\b0\fs22 @Service\par
+public class UserServiceImpl implements UserService \{\par
+    @Autowired\par
+    private UserDao userDao;\par
+ \par
+    @Override\par
+    public User getUserById(int userId) \{\par
+        return userDao.getUserById(userId);\par
+    \}\par
+ \par
+    @Override\par
+    public void updateUser(User user) \{\par
+        userDao.updateUser(user);\par
+    \}\par
+\}\par
+\cf4\b\fs24 UserController.java\par
+\cf0\b0\fs22 @Controller\par
+@RequestMapping("/user")\par
+public class UserController \{\par
+    @Autowired\par
+    private UserService userService;\par
+ \par
+    @GetMapping("/edit")\par
+    public String showEditForm(@RequestParam("userId") int userId, Model model) \{\par
+        User user = userService.getUserById(userId);\par
+        if (user == null) \{\par
+            // Handle invalid user ID\par
+            return "errorPage";\par
+        \}\par
+        model.addAttribute("user", user);\par
+        return "editUser";\par
+    \}\par
+ \par
+    @PostMapping("/update")\par
+    public String updateUser(@ModelAttribute("user") User user) \{\par
+        userService.updateUser(user);\par
+        return "confirmation";\par
+    \}\par
+\}\par
+\cf4\b\fs24 enterUserId.jsp\par
+\cf0\b0\fs22 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>\par
+<!DOCTYPE html>\par
+<html>\par
+<head>\par
+    <title>Enter User ID</title>\par
+</head>\par
+<body>\par
+    <h1>Enter User ID:</h1>\par
+    <form action="$\{pageContext.request.contextPath\}/user/edit" method="get">\par
+        <input type="number" name="userId" required>\par
+        <button type="submit">Edit</button>\par
+    </form>\par
+</body>\par
+</html>\par
+\cf4\b\fs24 editUser.jsp\par
+\cf0\b0\fs22 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>\par
+<!DOCTYPE html>\par
+<html>\par
+<head>\par
+    <title>Edit User</title>\par
+</head>\par
+<body>\par
+    <h1>Edit User</h1>\par
+    <form action="$\{pageContext.request.contextPath\}/user/update" method="post">\par
+<input type="hidden" name="userId" value="$\{user.userId\}">\par
+        <label>Username:</label>\par
+        <input type="text" name="username" value="$\{user.username\}" required><br>\par
+        <label>Email:</label>\par
+        <input type="email" name="email" value="$\{user.email\}" required><br>\par
+        <button type="submit">Update</button>\par
+    </form>\par
+</body>\par
+</html>\par
+\cf4\b\fs24 confirmation.jsp\par
+\cf0\b0\fs22 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>\par
+<!DOCTYPE html>\par
+<html>\par
+<head>\par
+    <title>Update Confirmation</title>\par
+</head>\par
+<body>\par
+    <h1>Update Successful</h1>\par
+    <p>User details have been updated successfully.</p>\par
+</body>\par
+</html>\par
+\b pom.xml\par
+\b0 <project xmlns="{{\field{\*\fldinst{HYPERLINK http://maven.apache.org/POM/4.0.0 }}{\fldrslt{http://maven.apache.org/POM/4.0.0\ul0\cf0}}}}\f0\fs22 " \par
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \par
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">\par
+    \par
+    <modelVersion>4.0.0</modelVersion>\par
+    <groupId>com.example</groupId>\par
+    <artifactId>spring-mvc-hibernate-demo</artifactId>\par
+    <version>1.0.0</version>\par
+    <packaging>war</packaging>\par
+ \par
+    <properties>\par
+        <spring.version>5.3.12.RELEASE</spring.version>\par
+        <hibernate.version>5.5.7.Final</hibernate.version>\par
+        <mysql-connector.version>8.0.27</mysql-connector.version>\par
+        <log4j.version>2.17.0</log4j.version>\par
+        <jstl.version>1.2</jstl.version>\par
+    </properties>\par
+ \par
+    <dependencies>\par
+        <!-- Spring MVC -->\par
+        <dependency>\par
+            <groupId>org.springframework</groupId>\par
+            <artifactId>spring-webmvc</artifactId>\par
+            <version>$\{spring.version\}</version>\par
+        </dependency>\par
+        \par
+        <!-- Hibernate -->\par
+        <dependency>\par
+            <groupId>org.hibernate</groupId>\par
+            <artifactId>hibernate-core</artifactId>\par
+            <version>$\{hibernate.version\}</version>\par
+        </dependency>\par
+ \par
+        <!-- MySQL Connector -->\par
+        <dependency>\par
+            <groupId>mysql</groupId>\par
+            <artifactId>mysql-connector-java</artifactId>\par
+            <version>$\{mysql-connector.version\}</version>\par
+        </dependency>\par
+ \par
+        <!-- Log4j -->\par
+        <dependency>\par
+            <groupId>org.apache.logging.log4j</groupId>\par
+            <artifactId>log4j-core</artifactId>\par
+            <version>$\{log4j.version\}</version>\par
+        </dependency>\par
+        \par
+        <!-- JSTL -->\par
+        <dependency>\par
+            <groupId>javax.servlet</groupId>\par
+            <artifactId>jstl</artifactId>\par
+            <version>$\{jstl.version\}</version>\par
+        </dependency>\par
+    </dependencies>\par
+ \par
+    <build>\par
+        <plugins>\par
+            <!-- Maven Compiler Plugin -->\par
+            <plugin>\par
+                <groupId>org.apache.maven.plugins</groupId>\par
+                <artifactId>maven-compiler-plugin</artifactId>\par
+                <version>3.8.1</version>\par
+                <configuration>\par
+                    <source>1.8</source>\par
+                    <target>1.8</target>\par
+                </configuration>\par
+            </plugin>\par
+            \par
+            <!-- Maven War Plugin -->\par
+            <plugin>\par
+                <groupId>org.apache.maven.plugins</groupId>\par
+                <artifactId>maven-war-plugin</artifactId>\par
+                <version>3.3.1</version>\par
+                <configuration>\par
+                    <warSourceDirectory>src/main/webapp</warSourceDirectory>\par
+                    <failOnMissingWebXml>false</failOnMissingWebXml>\par
+                </configuration>\par
+            </plugin>\par
+        </plugins>\par
+    </build>\par
+</project>\par
+\cf2\b\fs21 hibernate.cfg.xml\par
+\cf0\b0\fs22 <?xml version="1.0" encoding="UTF-8"?>\par
+<!DOCTYPE hibernate-configuration PUBLIC\par
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"\par
+    "{{\field{\*\fldinst{HYPERLINK http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd }}{\fldrslt{http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd\ul0\cf0}}}}\f0\fs22 ">\par
+<hibernate-configuration>\par
+    <session-factory>\par
+       \par
+        <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>\par
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/users/property>\par
+        <property name="hibernate.connection.username">root</property>\par
+        <property name="hibernate.connection.password">Spidey@0987</property>\par
+        \par
+        \par
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</property>\par
+        \par
+       \par
+        <property name="hibernate.current_session_context_class">thread</property>\par
+        \par
+                <property name="hibernate.show_sql">true</property>\par
+        <property name="hibernate.format_sql">true</property>\par
+        \par
+         </session-factory>\par
+</hibernate-configuration>\par
+\cf2\b\fs21 dispatcher-servlet.xml\par
+\cf0\b0\fs22 <beans xmlns="{{\field{\*\fldinst{HYPERLINK http://www.springframework.org/schema/beans }}{\fldrslt{http://www.springframework.org/schema/beans\ul0\cf0}}}}\f0\fs22 "\par
+       xmlns:context="http://www.springframework.org/schema/context"\par
+       xmlns:mvc="http://www.springframework.org/schema/mvc"\par
+       xsi:schemaLocation="http://www.springframework.org/schema/beans\par
+                           {{\field{\*\fldinst{HYPERLINK http://www.springframework.org/schema/beans/spring-beans.xsd }}{\fldrslt{http://www.springframework.org/schema/beans/spring-beans.xsd\ul0\cf0}}}}\f0\fs22\par
+                           {{\field{\*\fldinst{HYPERLINK http://www.springframework.org/schema/context }}{\fldrslt{http://www.springframework.org/schema/context\ul0\cf0}}}}\f0\fs22\par
+                           {{\field{\*\fldinst{HYPERLINK http://www.springframework.org/schema/context/spring-context.xsd }}{\fldrslt{http://www.springframework.org/schema/context/spring-context.xsd\ul0\cf0}}}}\f0\fs22\par
+                           {{\field{\*\fldinst{HYPERLINK http://www.springframework.org/schema/mvc }}{\fldrslt{http://www.springframework.org/schema/mvc\ul0\cf0}}}}\f0\fs22\par
+                           {{\field{\*\fldinst{HYPERLINK http://www.springframework.org/schema/mvc/spring-mvc.xsd }}{\fldrslt{http://www.springframework.org/schema/mvc/spring-mvc.xsd\ul0\cf0}}}}\f0\fs22 "\par
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\par
+       \par
+    <!-- Enable component scanning for Spring MVC -->\par
+    <context:component-scan base-package="com.example.controller" />\par
+    \par
+    <!-- Configure Spring MVC -->\par
+    <mvc:annotation-driven />\par
+    \par
+    <!-- View resolver for JSP files -->\par
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">\par
+        <property name="prefix" value="/WEB-INF/views/" />\par
+        <property name="suffix" value=".jsp" />\par
+    </bean>\par
+</beans>\par
+\b\par
+\b0\par
+
+\pard\sa200\sl276\slmult1\par
+
+\pard\sa200\sl276\slmult1\qc\par
+}
+ 
